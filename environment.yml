@@ -1,0 +1,8 @@
+name: pyCBH
+channels:
+  - conda-forge
+dependencies:
+  - python=3.6
+  - numpy
+  - rdkit=2020.03.4
+  - networkx
