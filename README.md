@@ -19,5 +19,5 @@ Run `make conda_env` to create the conda environment.
 Activate the conda environment:
 `conda activate pyCBH`
 
-Run `pytest -v test.py`
+Run `pytest` or `pytest -v`
 
