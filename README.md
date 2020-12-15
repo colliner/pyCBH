@@ -7,6 +7,7 @@ pyCBH: soft release v0.0.0
 * rdkit (version>=2020.03.4)
 * numpy
 * networkx
+* pytest
 
 ## Installation via conda
 Clone the repository:
