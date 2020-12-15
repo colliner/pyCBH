@@ -1,5 +1,6 @@
-# pyCBH: 
-soft release v0.0.0
+<img src="devtools/pycbh_banner.png" alt="pyCBH" width="700"/>
+pyCBH: soft release v0.0.0
+
 
 ## Requirements
 * python (version>=3.6)
