@@ -1,0 +1,4 @@
+numpy
+scipy
+rdkit=2020.03.4
+networkx
