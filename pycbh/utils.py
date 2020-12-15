@@ -298,9 +298,6 @@ def mol2graph(fn, mol_idx, mol, simple_graph=False, cg_opts=['halogen','rings'])
   for idx, atom in enumerate(atoms):
     if atom != 1.0 or include_H:
       cg_opts=[]
-      #cg_opts=['halogens','rings','aromatic','rings3','rings4','rings5','rings6']
-      #cg_opts=['halogens','rings','aromatic','rings3','rings4','nitro', 'sulfo', 'phospho']
-      cg_opts=['halogens','nitro','sulfo','phospho']
       cg_incl_ls=coarse_grain(idx,atoms,mol,cg_opts=cg_opts)
       #print('idx: {}'.format(idx))
       atom_obj = mol.GetAtoms()[idx]
