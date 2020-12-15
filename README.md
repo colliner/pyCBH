@@ -9,7 +9,14 @@ pyCBH: soft release v0.0.0
 * networkx
 
 ## Installation via conda
-First, clone the repository:
+Clone the repository:
 `git clone https://github.com/colliner/pyCBH.git`
 
 Run `make conda_env` to create the conda environment. 
+
+## Testing the installation
+Activate the conda environment with
+`conda activate pyCBH`
+
+Run `pytest -v test.py`
+
