@@ -7,7 +7,7 @@ soft release v0.0.0
 * numpy
 * networkx
 
-## Installation
+## Installation via conda
 First, clone the repository:
 `git clone https://github.com/colliner/pyCBH.git`
 
