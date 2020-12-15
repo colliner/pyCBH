@@ -47,7 +47,7 @@ def check_if_oxy(i,mol,atoms):
   #print('  oxygen bonds : {}'.format(o_bonds))
   return o_bonds[0] > 1 or o_bonds[1] > 0
 
-def coarse_grain(idx,atoms,mol,cg_opts):
+def coarse_grain(idx,atoms,mol,cg_opts=[]):
   '''
   coarse grain module
   options:
