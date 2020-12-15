@@ -28,9 +28,6 @@ SMILES string(s) --> smi2cbh --> cbh-n
 smi_str = 'O=Cc1ccc(O)c(OC)c1'
 cbh=pycbh.smi2cbh(smi_str, [0,1,2,3,4,5,6])
 cbh_print(cbh)
-cbh = pycbh.cbh_store2vec(cbh[0])
-v = pycbh.smi2mh([smi_str, smi_str], 0)[0]
-print('\n{}\n{}'.format(cbh,v))
 
 input('\npress enter to continue...\n')
 '''
