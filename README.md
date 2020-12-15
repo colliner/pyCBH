@@ -1,4 +1,5 @@
-# pyCBH
+# pyCBH: 
+soft release v0.0.0
 
 ## Requirements
 * python (version>=3.6)
