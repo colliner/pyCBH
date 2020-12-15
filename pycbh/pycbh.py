@@ -20,7 +20,10 @@ from collections import Counter
 
 from pycbh.iep import iep
 
-def load_frags(key_fn):
+def load_frags(key_fn):  
+  base_dir='/'.join(key_fn.split('/')[:-1])
+  if not os.path.exists(base_dir):
+    os.makedirs(base_dir)  
   with open(key_fn, "a"): pass
   frag_keys=dict()
   for y in [x.split(" ") for x in list(filter(None,open(key_fn, "r").read().split("\n")))]:
