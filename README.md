@@ -15,7 +15,7 @@ Clone the repository:
 Run `make conda_env` to create the conda environment. 
 
 ## Testing the installation
-Activate the conda environment with
+Activate the conda environment:
 `conda activate pyCBH`
 
 Run `pytest -v test.py`
