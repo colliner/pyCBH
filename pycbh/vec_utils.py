@@ -74,9 +74,56 @@ def xyzfn2mh(fn_ls, rung):
   cbh_mh, labels = cbhvec2multihot(cbh_ls)
   return cbh_mh, good_fn, labels
 
+def cbh_store2fndict(cbh_store, key_fn=None):
+  if type(cbh_store) != list: 
+    cbh_store = [cbh_store]
+  if type(cbh_store[0]) != list: 
+    cbh_store = [cbh_store]
+  cbh_store = pycbh.cbh_store2vec(cbh_store)
+  frag_dict=dict()
+  for frag_vecs in pycbh.load_frags(key_fn).values():
+    for frag_vec in frag_vecs:
+      frag_dict[frag_vec[1]]=frag_vec[-1]
+  '''
+  for key, val in frag_dict.items():
+    print('{} : {}'.format(key,val))
+  sys.exit()
+  '''
+  fn_dicts = dict()
+  for cbh_s in cbh_store:
+    fn_dict = dict()
+    label, left, right = cbh_s[0], cbh_s[1], cbh_s[2]
+    for smi in left:
+      if smi not in frag_dict:
+        print('error: {} not in frag_dict'.format(smi))
+        fn_dict['fragment_error_flag']=-1
+      else:
+        fn = frag_dict[smi]
+        if fn not in fn_dict:
+          fn_dict[fn]=-1
+        else:
+          fn_dict[fn]-=1
+    for smi in right:
+      if smi not in frag_dict:
+        print('error: {} not in frag_dict'.format(smi))
+        fn_dict['fragment_error_flag']=-1
+      else:
+        fn = frag_dict[smi]
+        if fn not in fn_dict:
+          fn_dict[fn]=1
+        else:
+          fn_dict[fn]+=1
+    if label not in fn_dicts:
+      fn_dicts[label]=fn_dict
+    else:
+      print('ERROR: {} already in fn_dicts'.format(label))
+  return fn_dicts
+
+
+
 if __name__=='__main__':
   if len(sys.argv[1::]) < 2:
-    sys.exit('USAGE: python3 vec_utils.py fn_type FILENAME(s)')
+    sys.exit('USAGE: python3 cbhvec_utils.py fn_type FILENAME(s)')
   fn_type = sys.argv[1]
   fn_ls = sys.argv[2::]
   save_vecs = True
@@ -102,7 +149,7 @@ if __name__=='__main__':
     y_output.close()
 
     print('Length of good smiles : {}'.format(len(good_x)))
-
+    
     with open(fn_dir+fn_base.replace('CBH','CBH{}'.format(rung))+'_labels.txt',"w") as fn:
       fn.write(" ".join([str(x) for x in labels])+"\n")
 

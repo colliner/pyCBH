@@ -163,6 +163,11 @@ def pprint_graph(graph):
   print("  'receivers': {}".format(graph['receivers']))
   print("  'globals': {}".format(graph['globals']))
   print("}")
+  print('graph[nodes] : {}'.format(np.asarray(graph['nodes']).shape))
+  print('graph[edges] : {}'.format(np.asarray(graph['edges']).shape))
+  print('graph[senders] : {}'.format(np.asarray(graph['senders']).shape))
+  print('graph[receivers] : {}'.format(np.asarray(graph['receivers']).shape))
+  print('graph[globals] : {}'.format(np.asarray(graph['globals']).shape))
   return
 
 def molneighbors_old(idx,mol):
@@ -241,30 +246,36 @@ def molfn2graph(mol, simple_graph=False):
   graph, cg_graph = mol2graph('', 0, mol, simple_graph=simple_graph)
   return graph, cg_graph
 
-def fn2graph(fn, simple_graph=False):
+def fn2graph(fn, simple_graph=False, fully_connected=False):
   mol_idx, mol = molfromxyz(fn)
-  graph, cg_graph = mol2graph(fn, mol_idx, mol, simple_graph=simple_graph)
+  #print(mol)
+  graph, cg_graph = mol2graph(fn, mol_idx, mol, simple_graph=simple_graph,fully_connected=fully_connected)
   return graph, cg_graph
 
-def mol2graph(fn, mol_idx, mol, simple_graph=False, cg_opts=['halogen','rings']):
-  #Chem.Kekulize(mol, clearAromaticFlags=True)
-  smi = Chem.MolToSmiles(mol,kekuleSmiles=True,canonical=True) 
+def mol2graph(fn, mol_idx, mol, simple_graph=False, cg_opts=['halogen','rings'], fully_connected=False):
+  smi = Chem.MolToSmiles(mol,kekuleSmiles=True,canonical=True)
   mol_ = Chem.RemoveHs(mol)
-  with open('fragment_lookup/tmp.mol', "w") as FILE:
-    FILE.write(Chem.MolToMolBlock(mol_))
-  xyz_coordinates=list()
-  #print(Chem.MolToMolBlock(mol))
-  bashCommand = 'obabel -imol fragment_lookup/tmp.mol -oxyz --gen3d -xb'
-  process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  output, error = process.communicate()
-  output=[x.split(' ') for x in output.decode("utf-8").split("\n")[2::] ]
-  for i, x_ in enumerate(output):
-    #vprint(x_,len(x_))
-    if len(x_) > 3:
-      xyz_coordinates.append([float(x) for x in x_[1::] if len(x) > 0])
-  #vprint(xyz_coordinates)
-  atoms = [atom2label(atom.GetSymbol()) for atom in mol.GetAtoms()]
-  #vprint(atoms)
+  smi = Chem.MolToSmiles(mol_)
+  if '.xyz' in fn:
+    atoms, charge, xyz_coordinates = xyz2mol.read_xyz_file(fn)
+  else:
+    with open('fragment_lookup/tmp.mol', "w") as FILE:
+      FILE.write(Chem.MolToMolBlock(mol_))
+    xyz_coordinates=list()
+    #print(Chem.MolToMolBlock(mol))
+    bashCommand = 'obabel -imol fragment_lookup/tmp.mol -oxyz --gen3d -xb'
+    process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, error = process.communicate()
+    output=[x.split(' ') for x in output.decode("utf-8").split("\n")[2::] ]
+    for i, x_ in enumerate(output):
+      #vprint(x_,len(x_))
+      if len(x_) > 3:
+        xyz_coordinates.append([float(x) for x in x_[1::] if len(x) > 0])
+    #vprint(xyz_coordinates)
+    atoms = [atom2label(atom.GetSymbol()) for atom in mol.GetAtoms()]
+  #print(len(atoms),atoms)
+  #print(len(xyz_coordinates),xyz_coordinates)
+  #sys.exit()
   '''
   try:
     atoms, xyz_coordinates = xyzfromfn(fn)
@@ -292,21 +303,34 @@ def mol2graph(fn, mol_idx, mol, simple_graph=False, cg_opts=['halogen','rings'])
         }
   #for atom in mol.GetAtoms():
   #  print(atom.GetExplicitValence())
+  #print('here')
   include_H = True
   cg_incld = list()
   #mol = Chem.MolFromMolFile('fragment_lookup/tmp.mol')
+  use_coords=False
+  oxy_ls=[idx for idx, x in enumerate(atoms) if x==8]
+  #print('oxy list: {}'.format(oxy_ls))
   for idx, atom in enumerate(atoms):
-    if atom != 1.0 or include_H:
+    if idx in cg_incld+oxy_ls:
+      #print('{} already incl'.format(idx))
+      pass
+    elif atom != 1.0 or include_H:
       cg_opts=[]
+      #cg_opts=['nitro','sulfo','phospho','rings']
+      cg_opts=['aromatic']
       cg_incl_ls=coarse_grain(idx,atoms,mol,cg_opts=cg_opts)
       #print('idx: {}'.format(idx))
       atom_obj = mol.GetAtoms()[idx]
       #print('  ',idx, float(atom), atom_obj.GetExplicitValence(), xyz_coordinates[idx])
       for cg_incl in cg_incl_ls:
-        try:
-          graph['nodes'].append([idx, float(atom), cg_incl, atom_obj.GetExplicitValence(), [round(x,4) for x in xyz_coordinates[idx].tolist()]])
-        except:
-          graph['nodes'].append([idx, float(atom), cg_incl, atom_obj.GetExplicitValence(), [round(x,4) for x in xyz_coordinates[idx]]])
+        if use_coords:
+          try:
+            graph['nodes'].append([idx, float(atom), cg_incl, atom_obj.GetExplicitValence(), [round(x,4) for x in xyz_coordinates[idx].tolist()]])
+          except:
+            #print('{} failed'.format(idx))
+            graph['nodes'].append([idx, float(atom), cg_incl, atom_obj.GetExplicitValence(), [round(x,4) for x in xyz_coordinates[idx]]])
+        else:
+          graph['nodes'].append([idx, float(atom), cg_incl])
         if idx not in cg_incld:
           cg_graph['nodes'].append([idx, float(atom), cg_incl])
           #print('added {}'.format([idx, float(atom), cg_incl]))
@@ -314,8 +338,30 @@ def mol2graph(fn, mol_idx, mol, simple_graph=False, cg_opts=['halogen','rings'])
         for cg_incl in cg_incl_ls:
           cg_incld.extend(cg_incl) 
       #print(cg_incld)
+  atom = 8.0
+  for idx in oxy_ls:
+    if idx not in cg_incld:
+      cg_incl_ls=coarse_grain(idx,atoms,mol,cg_opts=cg_opts)
+      atom_obj = mol.GetAtoms()[idx]
+      for cg_incl in cg_incl_ls:
+        if use_coords:
+          try:
+            graph['nodes'].append([idx, float(atom), cg_incl, atom_obj.GetExplicitValence(), [round(x,4) for x in xyz_coordinates[idx].tolist()]])
+          except:
+            graph['nodes'].append([idx, float(atom), cg_incl, atom_obj.GetExplicitValence(), [round(x,4) for x in xyz_coordinates[idx]]])
+        else:
+          graph['nodes'].append([idx, float(atom), cg_incl])
+        if idx not in cg_incld:
+          cg_graph['nodes'].append([idx, float(atom), cg_incl])
+      if idx not in cg_incld:
+        for cg_incl in cg_incl_ls:
+          cg_incld.extend(cg_incl)
+  graph['nodes']=sorted(graph['nodes'])
+  #pprint_graph(graph)
   #pprint.pprint(invar)
+  #print('before kek')
   Chem.Kekulize(mol, clearAromaticFlags=True)
+  #print('here')
   for bond in mol.GetBonds():
     idx1=bond.GetBeginAtomIdx()
     idx2=bond.GetEndAtomIdx()
@@ -326,10 +372,14 @@ def mol2graph(fn, mol_idx, mol, simple_graph=False, cg_opts=['halogen','rings'])
       else:
         inc=False
     if inc: #atoms[idx1] != 1.0 and atoms[idx2] != 1.0:
-      dist = get_dist(xyz_coordinates[idx1],xyz_coordinates[idx2])
-      coulomb_inter = round(float(atoms[idx1])*float(atoms[idx2])/float(dist),8)
-      edge1  = [atoms[idx1], atoms[idx2], bond.GetBondTypeAsDouble(), dist, coulomb_inter]
-      edge2  = [atoms[idx2], atoms[idx1], bond.GetBondTypeAsDouble(), dist, coulomb_inter]
+      if use_coords:
+        dist = get_dist(xyz_coordinates[idx1],xyz_coordinates[idx2])
+        coulomb_inter = round(float(atoms[idx1])*float(atoms[idx2])/float(dist),8)
+        edge1  = [atoms[idx1], atoms[idx2], bond.GetBondTypeAsDouble(), dist, coulomb_inter]
+        edge2  = [atoms[idx2], atoms[idx1], bond.GetBondTypeAsDouble(), dist, coulomb_inter]
+      else:
+        edge1  = [atoms[idx1], atoms[idx2], bond.GetBondTypeAsDouble()]
+        edge2  = [atoms[idx2], atoms[idx1], bond.GetBondTypeAsDouble()]
       graph['edges'].append(edge1)
       graph['senders'].append(idx1)
       graph['receivers'].append(idx2)
@@ -354,8 +404,23 @@ def mol2graph(fn, mol_idx, mol, simple_graph=False, cg_opts=['halogen','rings'])
                   cg_graph['edges'].append(edge2)
                   cg_graph['senders'].append(jdx)
                   cg_graph['receivers'].append(idx)
-  graph['globals']=[fn.replace('xyz/','').replace('.xyz','')]
-  cg_graph['globals']=[fn.replace('xyz/','').replace('.xyz','')]
+  if fully_connected:
+    for idx1 in range(len(cg_graph['nodes'])-1):
+      for idx2 in range(idx1+1,len(cg_graph['nodes'])):
+        if not is_connected(idx1,idx2,cg_graph):
+          dist = get_dist(xyz_coordinates[idx1],xyz_coordinates[idx2])
+          coulomb_inter = round(float(atoms[idx1])*float(atoms[idx2])/float(dist),8)
+          edge1  = [atoms[idx1], atoms[idx2], 0.0, dist, coulomb_inter]
+          edge2  = [atoms[idx2], atoms[idx1], 0.0, dist, coulomb_inter]
+          cg_graph['edges'].append(edge1)
+          cg_graph['senders'].append(idx1)
+          cg_graph['receivers'].append(idx2)
+          cg_graph['edges'].append(edge2)
+          cg_graph['senders'].append(idx2)
+          cg_graph['receivers'].append(idx1)
+
+  graph['globals']=[fn, smi]
+  cg_graph['globals']=[fn, smi]
   #pprint_graph(graph)
   #pprint_graph(cg_graph)
   #sys.exit()
@@ -421,7 +486,7 @@ def collect_neighbors(idx, rung, graph):
         idx2 = graph['receivers'][i]
         connected_node = graph['nodes'][idx2]
         if connected_node[1] != 1.0:
-          if idx2 > idx:
+          if idx2 > idx and graph['edges'][i][2] > 0.0:
             #incl=[idx,idx2]+graph['nodes'][idx][2]+graph['nodes'][idx2][2]
             #incl_ls.append(incl)
             incl_ls.append([idx,idx2])
@@ -441,7 +506,7 @@ def collect_neighbors(idx, rung, graph):
           idx2 = graph['receivers'][i]
           connected_node = graph['nodes'][idx2]
           if connected_node[1] != 1.0:
-            if idx2 not in incl:
+            if idx2 not in incl and graph['edges'][i][2] > 0.0:
               new_incl.append(idx2)
               #new_incl.extend(graph['nodes'][idx2][2])
       incl_ls[j].extend(new_incl)
@@ -584,13 +649,19 @@ def get_frag_fn(formula,smi,smi2,frag_keys):
   if formula in frag_keys:
     for f in frag_keys[formula]:
       if smi == f[1]:
+        #with open('coeff.txt','a') as FILE:
+        #  FILE.write(' '.join([str(x) for x in f])+'\n')
         return f[-1], False, frag_keys
     idx=len(frag_keys[formula])
     fn='f{}_{}_{:03d}'.format(formula2ha(formula),formula,idx)
     frag_keys[formula].append([idx, smi, smi2, fn])
+    #with open('coeff.txt','a') as FILE:
+    #  FILE.write(' '.join([str(x) for x in f])+'\n')
   else:
     fn='f{}_{}_{:03d}'.format(formula2ha(formula),formula,0)
     frag_keys[formula]=[[0, smi, smi2, fn]]
+    #with open('coeff.txt','a') as FILE:
+    #  FILE.write(' '.join([str(x) for x in [0, smi, smi2, fn]])+'\n')
   return fn, True, frag_keys
 
 def fraginc2smi(f, mol, frag_keys, frag_type=None, kekulize=False):
@@ -601,12 +672,32 @@ def fraginc2smi(f, mol, frag_keys, frag_type=None, kekulize=False):
     Chem.Kekulize(mol, clearAromaticFlags=True)
   mw = Chem.RWMol(mol)
   numatoms = mw.GetNumAtoms()
+  total_deg = [atom.GetTotalValence() for atom in mw.GetAtoms()]
   for i in range(numatoms):
     idx = numatoms-1-i
     if idx not in f:
       mw.RemoveAtom(idx)
   numatoms = mw.GetNumAtoms()
   #if len(Chem.GetSymmSSSR(mw)) < 1:
+  mw = Chem.RWMol(Chem.AddHs(mw))
+  #print(total_deg)
+  #print('a : {}'.format([atom.GetAtomicNum() for atom in mol.GetAtoms()]))
+  #print('f : {}'.format(f))
+  for idx, val in enumerate(total_deg):
+    if idx in f:
+      idx2 = sorted(list(set(f))).index(idx)
+      atom = mw.GetAtomWithIdx(idx2)
+      if atom.GetAtomicNum() != 1:
+        if atom.GetTotalValence() != val:
+          #print('{}({})'.format(idx,atom.GetAtomicNum()))
+          #print('VALENCE DOES NOT MATCH {} -> {}'.format(atom.GetTotalValence(),val))
+          #print('numatoms : {}'.format(mw.GetNumAtoms()))
+          for _ in range(val-atom.GetTotalValence()):
+            idx_h = mw.AddAtom(Chem.Atom(1))
+            #print('added H {}'.format(idx_h))
+            mw.AddBond(idx2,idx_h,Chem.BondType.SINGLE)
+          #print('numatoms : {}'.format(mw.GetNumAtoms()))
+          #sys.exit() 
   idx_rings = list()
   for r in Chem.GetSymmSSSR(mw):
     for x in r:
@@ -624,7 +715,7 @@ def fraginc2smi(f, mol, frag_keys, frag_type=None, kekulize=False):
     except:
       print('Cannot kekulize mw')
       smi = Chem.MolToSmiles(mw)
-
+  
   #smi = Chem.MolToSmiles(mw,kekuleSmiles=True,canonical=True)
   else:
     smi = Chem.MolToSmiles(mw)
@@ -642,6 +733,7 @@ def fraginc2smi(f, mol, frag_keys, frag_type=None, kekulize=False):
     pass
   #smi = Chem.MolToSmiles(mol,kekuleSmiles=True)
   #print(smi, mol)
+  #mw = Chem.AddHs(mw)
   mol = Chem.AddHs(mol)
   AllChem.EmbedMolecule(mol)
   #print(smi, mol.GetNumAtoms())
@@ -674,7 +766,11 @@ def fraginc2smi(f, mol, frag_keys, frag_type=None, kekulize=False):
 def cbh_print(cbh):
   print()
   for c in cbh:
-    print('\n'+'\n'.join([' '+x for x in c[1::]]))
+    if type(c[-1]) == dict:
+      c=c[1:-1]
+    else:
+      c=c[1:]
+    print('\n'+'\n'.join([' '+x for x in c]))
   pass
 
 def print_cbh(mol,cbh_dict,rung):
@@ -706,7 +802,8 @@ def print_cbh(mol,cbh_dict,rung):
 
 def add_attr2graph(graph,rung,which_idx,smi,frag_fn):
   if len(which_idx) == 1:
-    graph['nodes'][which_idx[0]].append(['CBH-{}'.format(rung),smi,frag_fn])
+    if rung % 2 == 0:
+      graph['nodes'][which_idx[0]].append(['CBH-{}'.format(rung),smi,frag_fn])
   else:
     for idx, idx1 in enumerate(graph['senders']):
       idx2 = graph['receivers'][idx]
@@ -716,44 +813,6 @@ def add_attr2graph(graph,rung,which_idx,smi,frag_fn):
         graph['edges'][idx].append(['CBH-{}'.format(rung),smi,frag_fn])
   return graph
 
-
-def old_smi2cbh(smi, rung):
-  graph = smi2graph(smi)
-  cbh_p, cbh_r = calc_cbh(rung, graph)
-  mol = Chem.MolFromSmiles(smi)
-  Chem.Kekulize(mol,clearAromaticFlags=True)
-  cbh_dict = dict()
-  r_atoms = mol2formula(Chem.AddHs(mol), incl_H=True)
-  p_atoms = dict()
-  for f in cbh_p:
-    smi, atoms, frag_fn, _ = fraginc2smi(f, mol, dict(), frag_type='primary')
-    p_atoms = combine_dicts(p_atoms, atoms)
-    if smi in cbh_dict:
-      cbh_dict[smi]+=1
-    else:
-      cbh_dict[smi]=1
-  for f in cbh_r:
-    smi, atoms, frag_fn, _ = fraginc2smi(f, mol, dict(), frag_type='overlap')
-    r_atoms = combine_dicts(r_atoms, atoms)
-    if smi in cbh_dict:
-      cbh_dict[smi]-=1
-    else:
-      cbh_dict[smi]=-1
-  if rung == 0:
-    bond_deg = 0.0
-    for bond in graph['edges']:
-      if bond[0] != 1 and bond[1] != 1:
-        bond_deg+=bond[2]
-    cbh_dict['[H][H]'] = -1*int(0.5*bond_deg)
-  left = list()
-  right = list()
-  for key in cbh_dict:
-    coeff = cbh_dict[key]
-    if coeff > 0:
-      right.extend([key]*coeff)
-    elif coeff < 0:
-      left.extend([key]*coeff)
-  return left, right
 
 if __name__=='__main__':
   if len(sys.argv[1::]) < 2:
@@ -898,7 +957,7 @@ if __name__=='__main__':
         graphs_ls.append(graph)
         pprint_graph(graph)
       except:
-        print(' FAILED')
+        print(' FAILED pycbh/utils.py : 976')
         pass
     print('\nLoaded {} graphs'.format(len(graphs_ls)))
     for c in cbh_store:

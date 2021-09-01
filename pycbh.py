@@ -1,9 +1,10 @@
 import sys, os
 import pycbh
 from rdkit import Chem
+import numpy as np
 
 print_cbh=True
-#print_cbh=False
+##print_cbh=False
 if print_cbh:
   from pycbh import cbh_print
 else:
@@ -12,7 +13,16 @@ else:
 if __name__=='__main__':
   if len(sys.argv[1::]) < 2:
     sys.exit('Usage python3 pycbh.py CBH_rung FILENAME(s)')
-  fns=sys.argv[2::]
+  save_graph = False
+  coarse_grain = False
+  fns=list()
+  for arg in sys.argv[2:]:
+    if arg == '-g':
+      save_graph = True
+    elif arg == '-cg':
+      coarse_grain = True
+    else:
+      fns.append(arg)
   try:
     rung_ls=[int(sys.argv[1])]
   except:
@@ -26,8 +36,18 @@ if __name__=='__main__':
   General conversion from files:
     filename(s) (.smi | .xyz | .mol) --> files2cbh --> cbh-n
   '''
-
-  cbh=pycbh.files2cbh(fns, rung_ls)
+  cbh=pycbh.files2cbh(fns, rung_ls, save_graph=save_graph,fully_connected=False,coarse_grain=coarse_grain)
+  #print(cbh)
+  #smi_str = 'O=Cc1ccc(O)c(OC)c1'
+  #cbh=pycbh.smi2cbh(smi_str, [0,1,2,3,4]) #,5,6])
   cbh_print(cbh)
+  methods=[['g4(0k)','zpe'],'pbe-d3',['g4(0k)','pbe-d3','zpe']]
+  key_fn="fragment_lookup/keys.txt"
+  energy_fn="fragment_lookup/lookup_energy.txt"
+  cbh_e = pycbh.cbh_store2energy(cbh, key_fn=key_fn, energy_fn=energy_fn, levels_of_theory=methods)
+  print('\nMethods : {}'.format(' '.join([x if type(x)!=list else '-'.join(x) for x in methods])))
+  for key in sorted(cbh_e.keys()):
+    if key is not 'methods':
+      print('{} {}'.format(key,' '.join([str(x) for x in cbh_e[key]])))
+  
 
- 

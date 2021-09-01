@@ -1,8 +1,6 @@
 import os,re,glob,sys
-
 from rdkit import Chem
 
-#from pycbh.utils import *
 
 def molneighbors(idx,mol):
   incl=list()
@@ -37,7 +35,7 @@ def check_if_aromatic(mol,r):
   #print('all bonds are aromatic')
   return True
 
-def check_if_oxy(i,mol,atoms):
+def check_if_oxy(i,mol,atoms,atype):
   o_bonds=[0,0]
   for x in molneighbors(i,mol):
     if int(atoms[x]) == 8:
@@ -45,9 +43,15 @@ def check_if_oxy(i,mol,atoms):
       if mol.GetBondBetweenAtoms(i,x).GetBondTypeAsDouble() > 1.0:
         o_bonds[1]+=1
   #print('  oxygen bonds : {}'.format(o_bonds))
-  return o_bonds[0] > 1 or o_bonds[1] > 0
+  #print(atype, o_bonds)
+  if atype == 6:
+    return o_bonds[0] > 1 and o_bonds[1] > 0
+  elif atype == 7:
+    return o_bonds[0] > 0
+  else:
+    return o_bonds[0] > 1 or o_bonds[1] > 0
 
-def coarse_grain(idx,atoms,mol,cg_opts=[]):
+def coarse_grain(idx,atoms,mol,cg_opts,cut_bonds_btwn_groups=True):
   '''
   coarse grain module
   options:
@@ -58,11 +62,14 @@ def coarse_grain(idx,atoms,mol,cg_opts=[]):
     nitro : preserves nitro groups
     sulfo : preserves sulfoxide and sulfone groups
     phospho : preserves phosphate groups
+    carbo : preserves carboxyl groups
   '''
   if len(cg_opts) > 0:
     #print('Coarse graining')
+    #print(cg_opts)
     incl=list()
   else:
+    #print('not coarse graining')
     return([[idx]])
   ring_sizes, oxygen_groups = list(), list()
   for opt in cg_opts:
@@ -79,6 +86,8 @@ def coarse_grain(idx,atoms,mol,cg_opts=[]):
       oxygen_groups.append(16)
     elif opt == 'phospho':
       oxygen_groups.append(15)
+    elif opt == 'carbo':
+      oxygen_groups.append(6)
   if 'aromatic' in cg_opts:
     arom_only = True
   else:
@@ -101,7 +110,7 @@ def coarse_grain(idx,atoms,mol,cg_opts=[]):
             if len(r) in ring_sizes:
               incl.append([idx]+[x for x in r])
               continue
-          if arom_only:
+          elif arom_only:
             if check_if_aromatic(mol,r): 
               incl.append([idx]+[x for x in r])
               continue
@@ -147,20 +156,30 @@ def coarse_grain(idx,atoms,mol,cg_opts=[]):
       for i in inc:
         #incl=molneighbors(idx,mol)
         if int(atoms[i]) in oxygen_groups:
-          if check_if_oxy(i,mol,atoms):
+          if check_if_oxy(i,mol,atoms,int(atoms[i])):
             for x in molneighbors(i,mol):
-              if x not in new_inc:
+              if cut_bonds_btwn_groups:
+                if int(atoms[x]) == 8:
+                  new_inc.append(x)
+              elif x not in new_inc:
                 new_inc.append(x)
-        else:
+        elif not cut_bonds_btwn_groups:
           incl_=molneighbors(i,mol)
           #incl_=molneighbors(idx,mol)
           for jdx in incl_:
             if int(atoms[jdx]) in oxygen_groups:
-              if check_if_oxy(jdx,mol,atoms):
+              if check_if_oxy(jdx,mol,atoms,int(atoms[i])):
                 for x in [jdx]+molneighbors(jdx, mol):
-                  if x not in new_inc:
+                  if cut_bonds_btwn_groups:
+                    if int(atoms[x]) == 8:
+                      new_inc.append(x)
+                      if jdx not in new_inc:
+                        new_inc.append(jdx)
+                  elif x not in new_inc:
                     #incl.append([idx]+jdx)
                     new_inc.append(x)
+                    if jdx not in new_inc:
+                      new_inc.append(jdx)
         #print(atoms[i],new_inc,[atoms[x] for x in molneighbors(i,mol)])
       incl[idx_]=new_inc
   #if len(cg_opts) > 0:

@@ -20,10 +20,7 @@ from collections import Counter
 
 from pycbh.iep import iep
 
-def load_frags(key_fn):  
-  base_dir='/'.join(key_fn.split('/')[:-1])
-  if not os.path.exists(base_dir):
-    os.makedirs(base_dir)  
+def load_frags(key_fn):
   with open(key_fn, "a"): pass
   frag_keys=dict()
   for y in [x.split(" ") for x in list(filter(None,open(key_fn, "r").read().split("\n")))]:
@@ -41,12 +38,16 @@ def cbh_store2vec(cbh_store):
   vec = list()
   for cbh_s in cbh_store:
     #print(cbh_s)
-    v = [x for x in cbh_s[1].split(' ') if len(x) > 0][2::]
+    label = cbh_s[0]+' '+cbh_s[1].split('\n')[0]
+    v = [x for x in cbh_s[1].split(' ') if len(x) > 0][2:]
     left, right = list(), list()
     '''
     ['+', '3', '[H][H]', '-->', 'CF', '+', 'CBr', '+', 'CCl']
     '''
-    v = [[y for y in x.split('+') if len(y) > 0] for x in ' '.join(v).split('-->')]
+    v.append('+')
+    if len(v) > 1 and v[0] == '+': v=v[1:]
+    if len(v) > 1 and v[-1] == '+': v=v[:-1]
+    v = [[y for y in x.split(' + ') if len(y) > 0] for x in ' '.join(v).split('-->')]
     if len(v) > 1:
       
       for x in v[0]:
@@ -65,10 +66,38 @@ def cbh_store2vec(cbh_store):
           right.append(x[-1])
       else:
         right.append(x[-1])
-    vec.append([left,right])
+    vec.append([label,left,right])
   return vec 
 
-def smi2cbh(smi, rung, key_fn='fragment_lookup/keys.txt'):
+def cbh_store2fragvec(cbh_store, keys=[None]):
+  if type(cbh_store) != list:
+    cbh_store = [cbh_store]
+  if type(cbh_store[0]) != list:
+    cbh_store = [cbh_store]
+  vec_ls = list()
+  cbh_store = cbh_store2vec(cbh_store)
+  for cbh_s in cbh_store:
+    vec=list()
+    left, right = cbh_s[0], cbh_s[-1]
+    #print('reac {}\nprod {}'.format(left,right))
+    sum_l, sum_r = 0, 0
+    for k in keys:
+      if k in left:
+        vec.append(-1*left.count(k))
+        sum_l+=left.count(k)
+      elif k in right:
+        vec.append(right.count(k))
+        sum_r+=right.count(k)
+      else:
+        vec.append(0)
+    #print('sum_r {} {}\nsum_l {} {}'.format(sum_r, len(right),sum_l,len(left)))
+    if sum_r == len(right) and sum_l == len(left):
+      vec_ls.append(vec)
+    else:
+      vec_ls.append([])
+  return vec_ls
+
+def smi2cbh(smi, rung, key_fn='fragment_lookup/keys.txt',graph_only=False):
   frag_keys=load_frags(key_fn)
   if type(smi) != list:
     smi=[smi]
@@ -81,7 +110,7 @@ def smi2cbh(smi, rung, key_fn='fragment_lookup/keys.txt'):
   #pprint_graph(graph)
   return cbh_store
 
-def mol2cbh(mol, rung, key_fn='fragment_lookup/keys.txt'):
+def mol2cbh(mol, rung, key_fn='fragment_lookup/keys.txt',graph_only=False):
   frag_keys=load_frags(key_fn)
   if type(mol) != list:
     mol = [mol]
@@ -96,7 +125,7 @@ def mol2cbh(mol, rung, key_fn='fragment_lookup/keys.txt'):
     m, graph, cbh_store = molgraph2cbh(str(m), m, graph, rung, frag_keys, cbh_store)
   return cbh_store
 
-def xyz2cbh(fn, rung, key_fn='fragment_lookup/keys.txt'):
+def xyz2cbh(fn, rung, key_fn='fragment_lookup/keys.txt',graph_only=False):
   frag_keys=load_frags(key_fn)
   if type(fn) != list:
     fn = [fn]
@@ -109,7 +138,7 @@ def xyz2cbh(fn, rung, key_fn='fragment_lookup/keys.txt'):
     mol, graph, cbh_store = molgraph2cbh(str(f), mol, graph, rung, frag_keys, cbh_store)
   return cbh_store
 
-def files2cbh(fns, rung_ls, save_graph=False, key_fn='fragment_lookup/keys.txt'):
+def files2cbh(fns, rung_ls, save_graph=False, key_fn='fragment_lookup/keys.txt',graph_only=False,fully_connected=False,coarse_grain=False):
   if type(fns) != list:
     fns=[fns]
   frag_keys=load_frags(key_fn)
@@ -123,8 +152,9 @@ def files2cbh(fns, rung_ls, save_graph=False, key_fn='fragment_lookup/keys.txt')
       elif '.mol' in fn:
         graph, cg_graph = molfn2graph(fn)      
       else:
-        graph, cg_graph = fn2graph(fn)
+        graph, cg_graph = fn2graph(fn,fully_connected=fully_connected)
       #print('G:',graph)
+      #sys.exit()
       #graphs_ls.append(graph)
       if '.smi' in fn:
         mol_idx, mol = molfromsmi(fn)
@@ -135,11 +165,16 @@ def files2cbh(fns, rung_ls, save_graph=False, key_fn='fragment_lookup/keys.txt')
         mol_idx, mol = molfromxyz(fn)
       mol, graph, cbh_store = molgraph2cbh(fn, mol, graph, rung_ls, frag_keys, cbh_store)
       graphs_ls.append(graph)
+
       if save_graph:
-        pprint_graph(graph)
+        #pprint_graph(graph)
+        if graph_only:
+          cbh_store[-1]=[cbh_store[-1][0] , graph]
+        else:
+          cbh_store[-1].append(graph)
       #pprint_graph(graph)
     except:
-      print(' FAILED ', end='')
+      print(' FAILED pycbh/pycbh.py :172 ', end='')
       pass
   #print('\nLoaded {} graphs'.format(len(graphs_ls)))
   #for c in cbh_store:
@@ -168,6 +203,7 @@ def molgraph2cbh(fn, mol, graph, rung_ls, frag_keys, cbh_store):
   #print('{}'.format(Chem.MolToSmiles(Chem.RemoveHs(mol))))
   #print(rung_ls)
   for rung in rung_ls:
+    #print('rung : CBH-{}'.format(rung))
     cbh_p_, cbh_r = calc_cbh(rung, graph)
     #f_dict = iep(cbh_p_)
     cbh_p__ = list()
@@ -192,6 +228,7 @@ def molgraph2cbh(fn, mol, graph, rung_ls, frag_keys, cbh_store):
     cbh_dict = dict()
     r_atoms = mol2formula(Chem.AddHs(mol), incl_H=True)
     p_atoms = dict()
+    #print('  pdt start')
     for frag in p_test:
       f = str2list(frag)
       #f = list()
@@ -201,7 +238,12 @@ def molgraph2cbh(fn, mol, graph, rung_ls, frag_keys, cbh_store):
       try:
         smi, atoms, frag_fn, frag_keys = fraginc2smi(f, mol, frag_keys, frag_type='primary', kekulize=True)
       except:
+        #sys.exit()
+        #pprint_graph(graph)
+        print('    fraginc2smi(kek=False)')
+        sys.exit()
         smi, atoms, frag_fn, frag_keys = fraginc2smi(f, mol, frag_keys, frag_type='primary', kekulize=False)
+      #sys.exit()
       atoms.update((x, y*p_test[frag]) for x, y in atoms.items())
       p_atoms = combine_dicts(p_atoms, atoms)
       '''
@@ -227,6 +269,8 @@ def molgraph2cbh(fn, mol, graph, rung_ls, frag_keys, cbh_store):
           cbh_dict[smi]+=p_test[frag]
         else:
           cbh_dict[smi]=p_test[frag]
+    #print('  pdt done')
+    #print('  rnt start')
     for frag in r_test:
       f = str2list(frag)
       #f = list()
@@ -235,7 +279,7 @@ def molgraph2cbh(fn, mol, graph, rung_ls, frag_keys, cbh_store):
       try:
         smi, atoms, frag_fn, frag_keys = fraginc2smi(f, mol, frag_keys, frag_type='overlap', kekulize=True)
       except:
-        print('kekulize')
+        #print('kekulize')
         smi, atoms, frag_fn, frag_keys = fraginc2smi(f, mol, frag_keys, frag_type='overlap', kekulize=False)
       atoms.update((x, y*r_test[frag]) for x, y in atoms.items())
       r_atoms = combine_dicts(r_atoms, atoms)
@@ -248,6 +292,7 @@ def molgraph2cbh(fn, mol, graph, rung_ls, frag_keys, cbh_store):
           cbh_dict[smi]-=r_test[frag]
         else:
           cbh_dict[smi]=-1*r_test[frag]
+    #print('  rnt done')
     if '[HH]' in cbh_dict:
       cbh_dict['[H][H]']=cbh_dict.pop('[HH]')
     if rung == 0:
@@ -266,7 +311,10 @@ def molgraph2cbh(fn, mol, graph, rung_ls, frag_keys, cbh_store):
         net_H=abs(p_atoms['H']-r_atoms['H'])
         cbh_dict['[H][H]'] = -1*int(0.5*net_H)
         r_atoms['H']+=net_H
+    #print('print_cbh')
     cbh = print_cbh(mol,cbh_dict,rung)
+
+
     if not sorted(p_atoms.items()) == sorted(r_atoms.items()):
       print("  WARNING: Atom counts dont match")
       net_atoms=dict()
@@ -281,4 +329,6 @@ def molgraph2cbh(fn, mol, graph, rung_ls, frag_keys, cbh_store):
       cbh_store.append([fn,cbh]) #,"  (Atom counts are balanced)"])
       #print("\n  (Atom counts are balanced)")
     #print('  Atom counts: {}, {}'.format(p_atoms,r_atoms))
+    #if len(graph['globals']) < 2:
+    #  graph['globals'].append(Chem.MolToSmiles(Chem.RemoveHs(mol),kekuleSmiles=True,canonical=True))
   return mol, graph, cbh_store
