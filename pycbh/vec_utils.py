@@ -23,7 +23,7 @@ def smi2cbhvec(smi_ls, cbh_rung):
   good_smi, cbh_ls = list(), list()
   for smi in smi_ls:
     try:
-      left, right = pycbh.cbh_store2vec(pycbh.smi2cbh(smi[1], cbh_rung))[0]
+      _, left, right = pycbh.cbh_store2vec(pycbh.smi2cbh(smi[1], cbh_rung))[0]
       good_smi.append(smi)
       cbh_ls.append([left,right])
     except:
@@ -36,7 +36,7 @@ def xyz2cbhvec(fn_ls, cbh_rung):
   good_fn, cbh_ls = list(), list()
   for fn in fn_ls:
     try:
-      left, right = pycbh.cbh_store2vec(pycbh.xyz2cbh(fn, cbh_rung))[0]
+      _, left, right = pycbh.cbh_store2vec(pycbh.xyz2cbh(fn, cbh_rung))[0]
       good_fn.append(fn)
       cbh_ls.append([left,right])
     except:
