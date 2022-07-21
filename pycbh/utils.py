@@ -252,7 +252,7 @@ def fn2graph(fn, simple_graph=False, fully_connected=False):
   graph, cg_graph = mol2graph(fn, mol_idx, mol, simple_graph=simple_graph,fully_connected=fully_connected)
   return graph, cg_graph
 
-def mol2graph(fn, mol_idx, mol, simple_graph=False, cg_opts=['halogen','rings'], fully_connected=False):
+def mol2graph(fn, mol_idx, mol, simple_graph=False, cg_opts=[], fully_connected=False):
   smi = Chem.MolToSmiles(mol,kekuleSmiles=True,canonical=True)
   mol_ = Chem.RemoveHs(mol)
   smi = Chem.MolToSmiles(mol_)
@@ -316,8 +316,6 @@ def mol2graph(fn, mol_idx, mol, simple_graph=False, cg_opts=['halogen','rings'],
       pass
     elif atom != 1.0 or include_H:
       cg_opts=[]
-      #cg_opts=['nitro','sulfo','phospho','rings']
-      cg_opts=['aromatic']
       cg_incl_ls=coarse_grain(idx,atoms,mol,cg_opts=cg_opts)
       #print('idx: {}'.format(idx))
       atom_obj = mol.GetAtoms()[idx]
