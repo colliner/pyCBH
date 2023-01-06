@@ -37,9 +37,6 @@ if __name__=='__main__':
     filename(s) (.smi | .xyz | .mol) --> files2cbh --> cbh-n
   '''
   cbh=pycbh.files2cbh(fns, rung_ls, save_graph=save_graph,fully_connected=False,coarse_grain=coarse_grain)
-  #print(cbh)
-  #smi_str = 'O=Cc1ccc(O)c(OC)c1'
-  #cbh=pycbh.smi2cbh(smi_str, [0,1,2,3,4]) #,5,6])
   cbh_print(cbh)
   methods=[['g4(0k)','zpe'],'pbe-d3',['g4(0k)','pbe-d3','zpe']]
   key_fn="fragment_lookup/keys.txt"
@@ -47,7 +44,7 @@ if __name__=='__main__':
   cbh_e = pycbh.cbh_store2energy(cbh, key_fn=key_fn, energy_fn=energy_fn, levels_of_theory=methods)
   print('\nMethods : {}'.format(' '.join([x if type(x)!=list else '-'.join(x) for x in methods])))
   for key in sorted(cbh_e.keys()):
-    if key is not 'methods':
+    if key != 'methods':
       print('{} {}'.format(key,' '.join([str(x) for x in cbh_e[key]])))
   
 
