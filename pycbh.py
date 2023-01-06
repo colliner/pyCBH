@@ -11,7 +11,7 @@ if __name__=='__main__':
   try:
     rung_ls=[int(sys.argv[1])]
   except:
-      sys.exit('Usage: python3 pycbh.py CBH_rung FILENAME(s)\n  CBH rung must be an integer')
+    sys.exit('Usage: python3 pycbh.py CBH_rung FILENAME(s)\n  CBH rung must be an integer')
   '''
   General conversion from files:
     filename(s) (.smi | .xyz | .mol) --> files2cbh --> cbh-n
