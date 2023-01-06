@@ -12,11 +12,12 @@ if __name__=='__main__':
     rung_ls=[int(sys.argv[1])]
   except:
     sys.exit('Usage: python3 pycbh.py CBH_rung FILENAME(s)\n  CBH rung must be an integer')
+  fns = sys.argv[2:]
   '''
   General conversion from files:
     filename(s) (.smi | .xyz | .mol) --> files2cbh --> cbh-n
   '''
-  cbh=pycbh.files2cbh(fns, rung_ls, save_graph=save_graph,fully_connected=False,coarse_grain=coarse_grain)
+  cbh=pycbh.files2cbh(fns, rung_ls)
   cbh_print(cbh)
   methods=[['g4(0k)','zpe'],'pbe-d3',['g4(0k)','pbe-d3','zpe']]
   key_fn="fragment_lookup/keys.txt"
@@ -26,5 +27,4 @@ if __name__=='__main__':
   for key in sorted(cbh_e.keys()):
     if key != 'methods':
       print('{} {}'.format(key,' '.join([str(x) for x in cbh_e[key]])))
-  
-
+  print()
