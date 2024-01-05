@@ -7,6 +7,15 @@ import pprint
 
 
 def cbh_vec2uniq(cbh_vec):
+    """
+    Converts a dictionary of CBH vectors into a dictionary of unique fragments.
+
+    Parameters:
+    - cbh_vec (dict): Dictionary containing CBH vectors.
+
+    Returns:
+    - dict: Dictionary with unique fragments grouped by CBH rung.
+    """
     uniq_dict = {'all': list()}
     for key, value in cbh_vec.items():
         cbh_rung = key.split(' ')[-1].replace(':', '')
@@ -24,6 +33,18 @@ def cbh_store2energy(cbh_store,
                      levels_of_theory=['B3LYP', 'HF', 'MP2', 'CCSD(T)'],
                      key_fn="fragment_lookup/keys.txt",
                      energy_fn="fragment_lookup/lookup_energy.txt"):
+    """
+    Converts a CBH store to a dictionary containing energy information.
+
+    Parameters:
+    - cbh_store (dict): CBH store containing fragment coefficients.
+    - levels_of_theory (list): List of methods or levels of theory.
+    - key_fn (str): Filepath for the keys.
+    - energy_fn (str): Filepath for the energy lookup table.
+
+    Returns:
+    - dict: Dictionary containing energy information for CBH vectors.
+    """
     energy_fn = "fragment_lookup/lookup_energy.txt"
     cbh_e = {'methods': levels_of_theory}
     cbh_vec = vec_utils.cbh_store2fndict(cbh_store, key_fn=key_fn)

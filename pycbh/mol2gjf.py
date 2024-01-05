@@ -2,8 +2,16 @@ import sys, os
 import subprocess
 import re
 
-
 def mol2gjf(fns):
+    """
+    Convert MOL files to Gaussian JOB files (GJF).
+
+    Parameters:
+    - fns (str or list): Filepath(s) of MOL file(s) to be converted.
+
+    Returns:
+    - list: Two lists containing the successfully converted files (goodf) and the failed ones (badf).
+    """
     if type(fns) != list:
         fns = [fns]
     goodf, badf = list(), list()

@@ -23,6 +23,15 @@ from pycbh.iep import iep
 
 
 def load_frags(key_fn):
+    """
+    Load fragment keys from a file.
+
+    Parameters:
+    - key_fn (str): Filepath of the fragment keys file.
+
+    Returns:
+    - dict: Fragment keys dictionary.
+    """
     with open(key_fn, "a"):
         pass
     frag_keys = dict()
@@ -39,6 +48,15 @@ def load_frags(key_fn):
 
 
 def cbh_store2vec(cbh_store):
+    """
+    Convert a list of CBH stores to a vector.
+
+    Parameters:
+    - cbh_store (list): List of CBH stores.
+
+    Returns:
+    - list: CBH vector.
+    """
     if type(cbh_store) != list:
         cbh_store = [cbh_store]
     if type(cbh_store[0]) != list:
@@ -84,6 +102,16 @@ def cbh_store2vec(cbh_store):
 
 
 def cbh_store2fragvec(cbh_store, keys=[None]):
+    """
+    Convert CBH store to a fragment vector.
+
+    Parameters:
+    - cbh_store (list): List of CBH stores.
+    - keys (list): List of keys.
+
+    Returns:
+    - list: Fragment vector.
+    """
     if type(cbh_store) != list:
         cbh_store = [cbh_store]
     if type(cbh_store[0]) != list:
@@ -113,6 +141,18 @@ def cbh_store2fragvec(cbh_store, keys=[None]):
 
 
 def smi2cbh(smi, rung, key_fn='fragment_lookup/keys.txt', graph_only=False):
+    """
+    Convert SMILES to CBH.
+
+    Parameters:
+    - smi (str or list): SMILES string or list of SMILES strings.
+    - rung (int): Rung for CBH.
+    - key_fn (str): Filepath of the fragment keys file.
+    - graph_only (bool): If True, only the graph is returned.
+
+    Returns:
+    - list: CBH store.
+    """
     frag_keys = load_frags(key_fn)
     if type(smi) != list:
         smi = [smi]
@@ -128,6 +168,18 @@ def smi2cbh(smi, rung, key_fn='fragment_lookup/keys.txt', graph_only=False):
 
 
 def mol2cbh(mol, rung, key_fn='fragment_lookup/keys.txt', graph_only=False):
+    """
+    Convert RDKit molecule to CBH.
+
+    Parameters:
+    - mol (RDKit molecule or list): RDKit molecule or list of RDKit molecules.
+    - rung (int): Rung for CBH.
+    - key_fn (str): Filepath of the fragment keys file.
+    - graph_only (bool): If True, only the graph is returned.
+
+    Returns:
+    - list: CBH store.
+    """
     frag_keys = load_frags(key_fn)
     if type(mol) != list:
         mol = [mol]
@@ -145,6 +197,18 @@ def mol2cbh(mol, rung, key_fn='fragment_lookup/keys.txt', graph_only=False):
 
 
 def xyz2cbh(fn, rung, key_fn='fragment_lookup/keys.txt', graph_only=False):
+    """
+    Convert XYZ file to CBH.
+
+    Parameters:
+    - fn (str or list): Filepath of the XYZ file or list of filepaths.
+    - rung (int): Rung for CBH.
+    - key_fn (str): Filepath of the fragment keys file.
+    - graph_only (bool): If True, only the graph is returned.
+
+    Returns:
+    - list: CBH store.
+    """
     frag_keys = load_frags(key_fn)
     if type(fn) != list:
         fn = [fn]
@@ -166,6 +230,21 @@ def files2cbh(fns,
               graph_only=False,
               fully_connected=False,
               coarse_grain=False):
+    """
+    Convert files to CBH.
+
+    Parameters:
+    - fns (str or list): Filepath of the file or list of filepaths.
+    - rung_ls (list): List of rungs for CBH.
+    - save_graph (bool): If True, the graph is saved.
+    - key_fn (str): Filepath of the fragment keys file.
+    - graph_only (bool): If True, only the graph is returned.
+    - fully_connected (bool): If True, the graph is fully connected.
+    - coarse_grain (bool): If True, coarse-graining is applied.
+
+    Returns:
+    - list: CBH store.
+    """
     if type(fns) != list:
         fns = [fns]
     frag_keys = load_frags(key_fn)
@@ -220,6 +299,20 @@ def files2cbh(fns,
 
 
 def molgraph2cbh(fn, mol, graph, rung_ls, frag_keys, cbh_store):
+    """
+    Convert RDKit molecule graph to CBH.
+
+    Parameters:
+    - fn (str): Filepath of the file.
+    - mol (RDKit molecule): RDKit molecule.
+    - graph (dict): Graph representation.
+    - rung_ls (list): List of rungs for CBH.
+    - frag_keys (dict): Fragment keys dictionary.
+    - cbh_store (list): CBH store.
+
+    Returns:
+    - tuple: Updated RDKit molecule, graph, and CBH store.
+    """
     if type(rung_ls) != list:
         try:
             if '+' in str(rung_ls):

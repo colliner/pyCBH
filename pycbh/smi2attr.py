@@ -40,6 +40,16 @@ def valElec(mol):
 
 
 def enumerate_atoms(mol, atom_types=None):
+    """
+    Enumerate atoms in a molecule.
+
+    Parameters:
+    - mol (RDKit molecule): RDKit molecule.
+    - atom_types (list): List of atom types.
+
+    Returns:
+    - list: List of atom counts.
+    """
     atoms = mol2atomicnum(Chem.AddHs(mol))
     if atom_types is None:
         atom_types = sorted(list(set(atoms)))
@@ -52,6 +62,16 @@ def enumerate_atoms(mol, atom_types=None):
 
 
 def enumerate_bonds(mol, bond_types=None):
+    """
+    Enumerate bonds in a molecule.
+
+    Parameters:
+    - mol (RDKit molecule): RDKit molecule.
+    - bond_types (list): List of bond types.
+
+    Returns:
+    - list: List of bond counts.
+    """
     bonds = mol2bondtypes(Chem.RemoveHs(mol))
     if bond_types is None:
         bond_types = sorted(list(set(bonds)))
@@ -61,6 +81,15 @@ def enumerate_bonds(mol, bond_types=None):
 
 
 def dict2vec(d):
+    """
+    Convert a dictionary to a vector.
+
+    Parameters:
+    - d (dict): Input dictionary.
+
+    Returns:
+    - list: Vector representation of the dictionary.
+    """
     vec = list()
     for k in sorted(d.keys()):
         val = d[k]
@@ -71,6 +100,15 @@ def dict2vec(d):
 
 
 def smi2attr(smi):
+    """
+    Convert SMILES to molecular attributes.
+
+    Parameters:
+    - smi (str): SMILES string.
+
+    Returns:
+    - list: Molecular attributes vector.
+    """
     mol = Chem.MolFromSmiles(smi)
     mol = Chem.AddHs(mol)
     #print(pycbh.smi2mh(['propane', smi], 0))
@@ -85,27 +123,6 @@ def smi2attr(smi):
     attr['valElec'] = valElec(mol)
     pprint.pprint(attr)
     return dict2vec(attr)
-
-
-'''
-def smi2mol2vec(smi,model=None):
-  
-  if model is None:
-    #try:
-    if True:
-      model = word2vec.Word2Vec.load('mol2vec/models/model_300dim.pkl')
-    #except:
-    else:
-      pass
-  if model is not None:
-    mol = Chem.MolFromSmiles(smi)
-    mol = Chem.AddHs(mol)
-    vec= sentences2vec([mol2alt_sentence(mol,1)],model)[0].tolist()
-    if type(vec) == list:
-      if len(vec) == 300:
-        return vec, model
-  return [0.]*300, model
-'''
 
 if __name__ == '__main__':
     test_smi = '[H][H]'
