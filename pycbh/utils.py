@@ -25,6 +25,16 @@ from pycbh.cg_utils import *
 
 
 def vprint(*argu, end='\n'):
+    """
+    Verbose print function.
+
+    Parameters:
+    - *argu: Variable number of arguments to be printed.
+    - end (str): Ending character for print (default is '\n').
+
+    Returns:
+    - None
+    """
     #global verbose
     if verbose == 1:
         for arg in argu:
@@ -41,6 +51,16 @@ def str2list(st):
 
 
 def molfromxyz(fn):
+    """
+    Create a molecule object from an XYZ file.
+
+    Parameters:
+    - fn (str): File name of the XYZ file.
+
+    Returns:
+    - tuple: Tuple containing molecule index and molecule object.
+    """
+    pass
     atoms, charge, xyz_coordinates = xyz2mol.read_xyz_file(fn)
     try:
         mol_idx = int(fn.replace('xyz/qm7b_', '').replace('.xyz', '')) - 1
@@ -52,6 +72,15 @@ def molfromxyz(fn):
 
 
 def atom2label(label):
+    """
+    Convert atomic symbol to label.
+
+    Parameters:
+    - label: Atomic symbol.
+
+    Returns:
+    - int: Label corresponding to the atomic symbol.
+    """
     atoms = [
         'H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al',
         'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn',
@@ -71,6 +100,15 @@ def atom2label(label):
 
 
 def xyzfromsmi(smi):
+    """
+    Extract atoms and XYZ coordinates from a SMILES string.
+
+    Parameters:
+    - smi (str): Input SMILES string.
+
+    Returns:
+    - tuple: Tuple containing lists of atoms and XYZ coordinates.
+    """
     mol = Chem.MolFromSmiles(smi)
     mol = Chem.AddHs(mol)
     AllChem.EmbedMolecule(mol)
@@ -130,6 +168,16 @@ def molfromsmi(fn):
 
 
 def xyzfromfn(fn, heavy_only=False):
+    """
+    Extract heavy atoms and XYZ coordinates from an XYZ file.
+
+    Parameters:
+    - fn (str): File name of the XYZ file.
+    - heavy_only (bool): Flag to include only heavy atoms (default is False).
+
+    Returns:
+    - tuple: Tuple containing lists of heavy atoms and XYZ coordinates.
+    """
     atoms, charge, xyz_coordinates = xyz2mol.read_xyz_file(fn)
     heavy_atoms, heavy_xyz = list(), list()
     for idx, atom in enumerate(atoms):
@@ -141,6 +189,16 @@ def xyzfromfn(fn, heavy_only=False):
 
 
 def atom2onehot(atomtypes, atom):
+    """
+    Convert atomic type to one-hot encoding.
+
+    Parameters:
+    - atomtypes (list): List of atomic types.
+    - atom: Atomic type.
+
+    Returns:
+    - list: One-hot encoding of the atomic type.
+    """
     return [int(atom == x) for x in atomtypes]
 
 
@@ -150,6 +208,20 @@ def gaussian_expansion(d,
                        min_d=0.0,
                        max_d=4.0,
                        centers=[None]):
+    """
+    Gaussian expansion of a distance.
+
+    Parameters:
+    - d: Distance.
+    - n_centers (int): Number of Gaussian centers (default is 20).
+    - sigma (float): Standard deviation of Gaussian (default is 0.5).
+    - min_d (float): Minimum distance for centers (default is 0.0).
+    - max_d (float): Maximum distance for centers (default is 4.0).
+    - centers (list): List of pre-defined centers (default is [None]).
+
+    Returns:
+    - tuple: Tuple containing the Gaussian expansion and centers.
+    """
     if None in centers:
         centers = np.linspace(min_d, max_d, n_centers)
         #print('{} centers between {} and {} :\n  {}'.format(n_centers,min_d,max_d,centers))
@@ -163,9 +235,20 @@ def transform_edges(edge,
                     use_bondinverse=False,
                     use_z=True,
                     use_onehotatom=True):
-    '''
-  input: edge (list) : [ bond_len, atom_num1, atom_num2 ]
-  '''
+    """
+    Transform edges in a graph.
+
+    Parameters:
+    - edge (list): Edge information.
+    - verbose (bool): Flag for verbose printing (default is False).
+    - use_GauExp (bool): Flag for Gaussian expansion (default is True).
+    - use_bondinverse (bool): Flag for bond inverse transformation (default is False).
+    - use_z (bool): Flag for including atom indices (default is True).
+    - use_onehotatom (bool): Flag for one-hot encoding of atomic types (default is True).
+
+    Returns:
+    - list: Transformed edge information.
+    """
     atomtypes = [6, 7, 8, 9, 16, 17]
     #print(atomtypes)
     new_edge = list()
@@ -279,6 +362,16 @@ def float_len(x):
 
 
 def smi2graph(smi, simple_graph=False):
+    """
+    Convert a SMILES string to a graph.
+
+    Parameters:
+    - smi (str): Input SMILES string.
+    - simple_graph (bool): Flag for generating a simple graph (default is False).
+
+    Returns:
+    - tuple: Tuple containing complex and coarse-grained graphs.
+    """
     try:
         smi = smifromsmifile(smi)
     except:
@@ -290,6 +383,16 @@ def smi2graph(smi, simple_graph=False):
 
 
 def molfn2graph(mol, simple_graph=False):
+    """
+    Convert a molecular structure to a graph representation.
+
+    Parameters:
+    - mol (str): Molecular structure in MOL or SMILES format.
+    - simple_graph (bool): Flag to create a simple graph without detailed coordinates.
+
+    Returns:
+    Tuple: Two dictionaries representing the graph and coarse-grained graph.
+    """
     try:
         mol = Chem.MolFromMolFile(mol)
     except:
@@ -300,6 +403,17 @@ def molfn2graph(mol, simple_graph=False):
 
 
 def fn2graph(fn, simple_graph=False, fully_connected=False):
+    """
+    Convert a molecular structure from an XYZ file to a graph representation.
+
+    Parameters:
+    - fn (str): File path or name containing molecular structure in XYZ format.
+    - simple_graph (bool): Flag to create a simple graph without detailed coordinates.
+    - fully_connected (bool): Flag to connect all nodes in the coarse-grained graph.
+
+    Returns:
+    Tuple: Two dictionaries representing the graph and coarse-grained graph.
+    """
     mol_idx, mol = molfromxyz(fn)
     #print(mol)
     graph, cg_graph = mol2graph(fn,
@@ -316,6 +430,20 @@ def mol2graph(fn,
               simple_graph=False,
               cg_opts=[],
               fully_connected=False):
+    """
+    Convert a molecular structure to a graph representation.
+
+    Parameters:
+    - fn (str): File path or name containing molecular structure.
+    - mol_idx (int): Molecular index.
+    - mol (Chem.Mol): RDKit molecule object.
+    - simple_graph (bool): Flag to create a simple graph without detailed coordinates.
+    - cg_opts (list): Coarse-graining options.
+    - fully_connected (bool): Flag to connect all nodes in the coarse-grained graph.
+
+    Returns:
+    Tuple: Two dictionaries representing the graph and coarse-grained graph.
+    """
     smi = Chem.MolToSmiles(mol, kekuleSmiles=True, canonical=True)
     mol_ = Chem.RemoveHs(mol)
     smi = Chem.MolToSmiles(mol_)
@@ -531,6 +659,17 @@ def mol2graph(fn,
 
 
 def is_connected(idx1, idx2, graph):
+    """
+    Check if two nodes are connected in the graph.
+
+    Parameters:
+    - idx1 (int): Index of the first node.
+    - idx2 (int): Index of the second node.
+    - graph (dict): Graph dictionary.
+
+    Returns:
+    bool: True if nodes are connected, False otherwise.
+    """
     for i, idx in enumerate(graph['senders']):
         if idx == idx1:
             if graph['receivers'][i] == idx2:
@@ -539,6 +678,16 @@ def is_connected(idx1, idx2, graph):
 
 
 def check_dup(f, f_ls):
+    """
+    Check for duplicate fragments in a list.
+
+    Parameters:
+    - f (list): Fragment to check.
+    - f_ls (list): List of fragments.
+
+    Returns:
+    int: Count of occurrences of the fragment in the list.
+    """
     #return f_ls.count(f)
     f = sorted(f)
     f_ls = [sorted(x) for x in f_ls]
@@ -546,10 +695,17 @@ def check_dup(f, f_ls):
 
 
 def overlap(fragments, rung, graph):
-    '''
-  atom_or_bond == 0 for atom centric
-  atom_or_bond == 1 for bond centric
-  '''
+    """
+    Identify overlapping fragments in the graph.
+
+    Parameters:
+    - fragments (list): List of fragments.
+    - rung (int): Rung value.
+    - graph (dict): Graph dictionary.
+
+    Returns:
+    list: List of overlapping fragments.
+    """
     atom_or_bond = rung % 2
     overlaps = list()
     for idx1, frag1 in enumerate(fragments):
@@ -579,10 +735,17 @@ def overlap(fragments, rung, graph):
 
 
 def collect_neighbors(idx, rung, graph):
-    '''
-  atom_or_bond == 0 for atom centric
-  atom_or_bond == 1 for bond centric
-  '''
+    """
+    Collect neighboring nodes based on atom or bond centricity.
+
+    Parameters:
+    - idx (int): Index of the central node.
+    - rung (int): Rung value.
+    - graph (dict): Graph dictionary.
+
+    Returns:
+    list: List of included nodes.
+    """
     atom_or_bond = rung % 2
     incl_ls = list()
     if atom_or_bond:
@@ -622,6 +785,16 @@ def collect_neighbors(idx, rung, graph):
 
 
 def fix_cbh(f, o):
+    """
+    Fix CBH fragments.
+
+    Parameters:
+    - f (list): List of primary fragments.
+    - o (list): List of overlapping fragments.
+
+    Returns:
+    Tuple: Two lists representing fixed primary fragments and overlaps.
+    """
     done = False
     while not done:
         done = True
@@ -645,6 +818,16 @@ def fix_cbh(f, o):
 
 
 def calc_cbh(rung, graph):
+    """
+    Calculate CBH fragments.
+
+    Parameters:
+    - rung (int): Rung value.
+    - graph (dict): Graph dictionary.
+
+    Returns:
+    Tuple: Two lists representing primary fragments and overlaps.
+    """
     fragments = list()
     for idx, node in enumerate(graph['nodes']):
         if node[1] != 1.0:
@@ -674,6 +857,15 @@ def mol2formula(mol, incl_H=False):
 
 
 def moldict2hill(atom_types):
+    """
+    Convert atom type dictionary to Hill notation.
+
+    Parameters:
+    - atom_types (dict): Atom type dictionary.
+
+    Returns:
+    str: Hill notation string.
+    """
     #print('atom types: {}'.format(atom_types))
     hill = list()
     if 'C' in atom_types:
@@ -726,6 +918,15 @@ def formula2ha_old(formula):
 
 
 def formula2ha(f):
+    """
+    Calculate the number of heavy atoms in a chemical formula.
+
+    Parameters:
+    - f (str): Chemical formula.
+
+    Returns:
+    - int: Number of heavy atoms.
+    """
     ha_count = 0
     spl = list(f)
     k, v = '', '0'
@@ -756,12 +957,23 @@ def formula2ha(f):
 
 
 def get_frag_fn(formula, smi, smi2, frag_keys):
-    '''
-  frag_keys structure:
-  dict() = {formula : [idx, smi, smi2, fn]}
-  example:
-      'C2H6' : [[0, 'CC',  '[H][C]([H])([H])[C]([H])([H])[H]H', 'f2_C2H6_000']]
-  '''
+    """
+    Get or create a fragment identifier for a given chemical formula and SMILES strings.
+
+    frag_keys structure:
+        dict() = {formula : [idx, smi, smi2, fn]}
+        example:
+            'C2H6' : [[0, 'CC',  '[H][C]([H])([H])[C]([H])([H])[H]H', 'f2_C2H6_000']]
+
+    Parameters:
+    - formula (str): Chemical formula.
+    - smi (str): SMILES string.
+    - smi2 (str): Additional SMILES string.
+    - frag_keys (dict): Fragment keys structure.
+
+    Returns:
+    - tuple: Fragment identifier, a boolean indicating if a new fragment was created, and the updated fragment keys.
+    """
     if formula in frag_keys:
         for f in frag_keys[formula]:
             if smi == f[1]:
@@ -782,6 +994,19 @@ def get_frag_fn(formula, smi, smi2, frag_keys):
 
 
 def fraginc2smi(f, mol, frag_keys, frag_type=None, kekulize=False):
+    """
+    Convert a molecular fragment to a SMILES string, and update the fragment keys.
+
+    Parameters:
+    - f (list): List of indices representing the molecular fragment.
+    - mol (Chem.Mol): RDKit molecular object.
+    - frag_keys (dict): Fragment keys structure.
+    - frag_type (str): Fragment type identifier.
+    - kekulize (bool): Whether to kekulize the molecule.
+
+    Returns:
+    - tuple: SMILES string, molecular formula, fragment identifier, and the updated fragment keys.
+    """
     RDLogger.DisableLog('rdApp.*')
     smi = Chem.MolToSmiles(mol)
     #print('{:02d}'.format(f[0]), end=' ')
@@ -886,6 +1111,15 @@ def fraginc2smi(f, mol, frag_keys, frag_type=None, kekulize=False):
 
 
 def cbh_print(cbh):
+    """
+    Print the contents of a CBH list.
+
+    Parameters:
+    - cbh (list): List representing the CBH.
+
+    Returns:
+    - None
+    """
     print()
     for c in cbh:
         if type(c[-1]) == dict:
@@ -897,6 +1131,17 @@ def cbh_print(cbh):
 
 
 def print_cbh(mol, cbh_dict, rung):
+    """
+    Print the CBH details for a given molecule, CBH dictionary, and rung.
+
+    Parameters:
+    - mol (Chem.Mol): RDKit molecular object.
+    - cbh_dict (dict): Dictionary containing CBH details.
+    - rung (int): CBH rung identifier.
+
+    Returns:
+    - str: CBH details as a formatted string.
+    """
     react_ls, prod_ls = list(), list()
     #print('\nCBH-{}:'.format(rung))
     mol = Chem.RWMol(mol)
@@ -926,6 +1171,19 @@ def print_cbh(mol, cbh_dict, rung):
 
 
 def add_attr2graph(graph, rung, which_idx, smi, frag_fn):
+    """
+    Add attributes to a graph based on CBH details.
+
+    Parameters:
+    - graph (dict): Graph structure.
+    - rung (int): CBH rung identifier.
+    - which_idx (list): List of indices.
+    - smi (str): SMILES string.
+    - frag_fn (str): Fragment identifier.
+
+    Returns:
+    - dict: Updated graph structure.
+    """
     if len(which_idx) == 1:
         if rung % 2 == 0:
             graph['nodes'][which_idx[0]].append(

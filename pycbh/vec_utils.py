@@ -10,6 +10,16 @@ def remove_values_from_list(the_list, val):
 
 
 def smifromfn(smi_file, how_many=None):
+    """
+    Extract SMILES strings from a file.
+
+    Parameters:
+    - smi_file (str): File containing SMILES strings.
+    - how_many (int): Number of SMILES strings to extract.
+
+    Returns:
+    - list: List of SMILES strings.
+    """
     smiles_arr = [
         x.split(' ')
         for x in list(filter(None,
@@ -21,10 +31,16 @@ def smifromfn(smi_file, how_many=None):
 
 
 def smi2cbhvec(smi_ls, cbh_rung):
-    '''
-  should pass
-  [ label, smi]
-  '''
+    """
+    Convert SMILES strings to CBH vectors.
+
+    Parameters:
+    - smi_ls (list): List of SMILES strings.
+    - cbh_rung: CBH rung.
+
+    Returns:
+    - tuple: Tuple containing lists of good SMILES and CBH vectors.
+    """
     if type(smi_ls[0]) != list:
         smi_ls = [smi_ls]
     good_smi, cbh_ls = list(), list()
@@ -40,6 +56,16 @@ def smi2cbhvec(smi_ls, cbh_rung):
 
 
 def xyz2cbhvec(fn_ls, cbh_rung):
+    """
+    Convert XYZ files to CBH vectors.
+
+    Parameters:
+    - fn_ls (list): List of file names.
+    - cbh_rung: CBH rung.
+
+    Returns:
+    - tuple: Tuple containing lists of good file names and CBH vectors.
+    """
     if type(fn_ls) != list:
         fn_ls = [fn_ls]
     good_fn, cbh_ls = list(), list()
@@ -54,6 +80,15 @@ def xyz2cbhvec(fn_ls, cbh_rung):
 
 
 def cbhvec2multihot(cbh_ls):
+    """
+    Convert CBH vectors to multihot representation.
+
+    Parameters:
+    - cbh_ls (list): List of CBH vectors.
+
+    Returns:
+    - tuple: Tuple containing the multihot representation and labels.
+    """
     left, right = list(), list()
     for l, r in cbh_ls:
         left.extend(x for x in l if x not in left)
@@ -65,30 +100,54 @@ def cbhvec2multihot(cbh_ls):
         mh = [cbh[1].count(x) for x in right
              ] + [-1 * cbh[0].count(x) for x in left]
         cbh_mh.append(mh)
-        #print(cbh)
-        #print(mh)
     return cbh_mh, right + left
 
 
 def smi2mh(smiles_arr, rung):
+    """
+    Convert SMILES strings to multihot representation.
+
+    Parameters:
+    - smiles_arr (list): List of SMILES strings.
+    - rung: CBH rung.
+
+    Returns:
+    - tuple: Tuple containing the multihot representation, good SMILES, and labels.
+    """
     good_smi, cbh_ls = smi2cbhvec(smiles_arr, rung)
     print('multihot vector')
-    #print('good_smi : {}'.format(good_smi))
-    #print('cbh_ls   : {}'.format(cbh_ls))
     cbh_mh, labels = cbhvec2multihot(cbh_ls)
     return cbh_mh, good_smi, labels
 
 
 def xyzfn2mh(fn_ls, rung):
+    """
+    Convert XYZ file names to multihot representation.
+
+    Parameters:
+    - fn_ls (list): List of file names.
+    - rung: CBH rung.
+
+    Returns:
+    - tuple: Tuple containing the multihot representation, good file names, and labels.
+    """
     good_fn, cbh_ls = xyz2cbhvec(fn_ls, rung)
     print('multihot vector')
-    #print('good_fn : {}'.format(good_fn))
-    #print('cbh_ls   : {}'.format(cbh_ls))
     cbh_mh, labels = cbhvec2multihot(cbh_ls)
     return cbh_mh, good_fn, labels
 
 
 def cbh_store2fndict(cbh_store, key_fn=None):
+    """
+    Convert CBH store to a dictionary of file names.
+
+    Parameters:
+    - cbh_store (list): List of CBH vectors.
+    - key_fn (str): Key file name.
+
+    Returns:
+    - dict: Dictionary of file names.
+    """
     if type(cbh_store) != list:
         cbh_store = [cbh_store]
     if type(cbh_store[0]) != list:
